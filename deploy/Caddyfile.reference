@@ -1,0 +1,10 @@
+# Production routing reference. DO NOT overwrite the live config automatically.
+thinkai.vip, www.thinkai.vip, api.thinkai.vip {
+ @authority path /api/license/* /api/payment/* /downloads/*
+ handle @authority {
+  reverse_proxy 127.0.0.1:8788
+ }
+ handle {
+  reverse_proxy 127.0.0.1:3000
+ }
+}

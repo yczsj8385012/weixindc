@@ -4,7 +4,7 @@ import {
   ArrowRight, Sparkles, CreditCard, KeyRound, Search, HelpCircle, FileText,
   QrCode, Clock, Shield, AlertCircle, RefreshCw, Send, CheckCircle
 } from 'lucide-react';
-import JSZip from 'jszip';
+
 
 interface Product {
   id: string;
@@ -219,118 +219,25 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
 
   // Real client zip bundle generation or static file download
   const handleDownload = async (osName: string) => {
+    if (!osName.includes('Windows')) {
+      alert('macOS 版本尚未发布，目前仅支持 Windows 10/11。');
+      return;
+    }
     setIsDownloading(true);
     try {
-      // 1. Try static file first if placed in /downloads/ directory on server
-      const staticFileName = osName.includes('Windows')
-        ? 'ThinkAI_Wechat_Assistant_Win_x64_Green.zip'
-        : 'ThinkAI_Wechat_Assistant_macOS_Green.zip';
-      const staticUrl = `/downloads/${staticFileName}`;
-
-      const checkRes = await fetch(staticUrl, { method: 'HEAD' }).catch(() => null);
-      if (checkRes && checkRes.ok) {
-        const a = document.createElement('a');
-        a.href = staticUrl;
-        a.download = staticFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        return;
+      const url = '/downloads/ThinkAI_Wechat_Assistant_Win_x64_Green.zip';
+      const check = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (!check.ok || !check.headers.get('content-type')?.includes('application/zip')) {
+        throw new Error('正式压缩包尚未就绪，请稍后重试');
       }
-
-      // 2. Dynamic generation fallback with JSZip
-      const zip = new JSZip();
-
-      // 1. Readme
-      zip.file(
-        'README_使用说明与正版激活指南.txt',
-        `======================================================
-  微信群及好友数据导出助手 · 官方商业正版客户端
-======================================================
-
-【版本信息】v0.3.0-rc.1 官方稳定版 (${osName})
-【运行环境】Windows 10/11 / macOS 12+ (免安装解压即用)
-【云端授权节点】https://api.thinkai.vip
-【渠道代理标识】${referrerCode || 'DIRECT-OFFICIAL'}
-
-【首次使用三步走】
-1. 双击运行同目录下的启动器文件或主执行程序；
-2. 在弹出的「正版授权激活」窗口中，粘贴您在官方商城购买拿到的卡密 (以 VIP-2026- 开头)；
-3. 点击「立即激活」，系统将自动与香港云端授权节点握手绑定，进入软件即可畅享全部高级功能！
-
-【安全承诺】
-- 本软件全程遵循本地沙盒安全规范，所有导出数据均保存在您本机电脑，绝不上传云端；
-- 支持 72 小时离线宽限期，即使断网亦可正常读取与导出。
-
-官方售后与技术支持：https://thinkai.vip
-`
-      );
-
-      // 2. Channel Config JSON
-      zip.file(
-        'channel_config.json',
-        JSON.stringify(
-          {
-            app_id: 'thinkai-wechat-export',
-            version: '0.3.0-rc.1',
-            channel_agent: referrerCode || 'DIRECT-OFFICIAL',
-            authority_server: 'https://api.thinkai.vip',
-            backup_server: 'http://43.128.7.140:8787',
-            offline_grace_hours: 72,
-            signature_algorithm: 'RSA-2048/SHA-256'
-          },
-          null,
-          2
-        )
-      );
-
-      // 3. Batch launcher script
-      if (osName.includes('Windows')) {
-        zip.file(
-          '一键启动微信群数据导出助手.bat',
-          `@echo off
-chcp 65001 >nul
-title 微信群及好友数据导出助手 - 官方正版启动器
-echo ======================================================
-echo   正在启动微信群及好友数据导出助手 (v0.3.0-rc.1 绿色免安装版)...
-echo   官方云端授权节点: https://api.thinkai.vip
-echo   当前绑定的分销合伙人渠道: ${referrerCode || '官方正品'}
-echo ======================================================
-echo 正在检测运行环境与本地微信进程...
-timeout /t 1 >nul
-if exist "ThinkAI_Assistant.exe" (
-    start "" "ThinkAI_Assistant.exe"
-) else (
-    echo [提示] 绿色客户端启动器已就绪。
-    echo 首次使用请进入官网商城购买激活卡密，在主界面输入即可激活使用！
-    pause
-)
-exit
-`
-        );
-      }
-
-      // 4. License agreement
-      zip.file(
-        'LICENSE_AGREEMENT.txt',
-        `ThinkAI 商业软件最终用户许可协议 (EULA)
-版权所有 (C) 2026 ThinkAI Authority. 保留所有权利。
-此软件受国际版权法及商业软件授权体系保护。未经正版卡密授权，严禁反编译、破解或用于商业倒卖。
-`
-      );
-
-      // Generate blob
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ThinkAI_Wechat_Assistant_${osName.includes('Windows') ? 'Win_x64' : 'macOS'}_Green.zip`;
+      a.download = 'ThinkAI_Wechat_Assistant_Win_x64_Green.zip';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err: any) {
-      alert('下载生成失败: ' + err.message);
+      a.remove();
+    } catch (error: any) {
+      alert('下载失败：' + error.message);
     } finally {
       setIsDownloading(false);
     }
@@ -432,7 +339,7 @@ ${completedOrder.licenseKey}
             微信群及好友数据导出助手
           </h1>
           <p className="text-sm md:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            私域营销与大客户数据归档利器。毫秒级读取、全自动去重导出 Excel，支持多电脑同时授权。线上付款立即出卡，双击即用！
+            私域营销与大客户数据归档利器。毫秒级读取、全自动去重导出 Excel，支持多电脑同时授权。目前开放 Windows 授权测试，在线购买暂未开放。
           </p>
 
           {/* Download Buttons Call to Action */}
@@ -443,17 +350,16 @@ ${completedOrder.licenseKey}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shadow-lg shadow-indigo-600/30 disabled:opacity-50"
             >
               <Monitor className="w-4 h-4" />
-              <span>{isDownloading ? '正在打包客户端...' : '直接下载 Windows 绿色免安装包 (.zip)'}</span>
+              <span>{isDownloading ? '正在检查下载...' : '直接下载 Windows 绿色免安装包 (.zip)'}</span>
               <Download className="w-4 h-4" />
             </button>
 
             <button
-              onClick={() => handleDownload('macOS 免安装版')}
-              disabled={isDownloading}
+              disabled={true}
               className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5 border border-slate-700 shadow-sm disabled:opacity-50"
             >
               <Apple className="w-4 h-4" />
-              <span>下载 macOS 免安装版 (.zip)</span>
+              <span>macOS 版本尚未发布</span>
               <Download className="w-4 h-4" />
             </button>
           </div>
@@ -523,10 +429,10 @@ ${completedOrder.licenseKey}
       <div id="pricing-section">
         <div className="text-center max-w-xl mx-auto mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
-            选择正版授权套餐 · 线上扫码极速发卡
+            授权套餐说明 · 在线购买暂未开放
           </h2>
           <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-2">
-            云端 7x24 小时全自动出卡，支持微信、支付宝扫码付款，支持企业发票开具
+            目前仅开放下载与授权测试，不接受在线付款。
           </p>
         </div>
 
@@ -575,7 +481,7 @@ ${completedOrder.licenseKey}
                 </div>
 
                 <button
-                  onClick={() => handleStartPay(prod)}
+                  disabled={true}
                   className={`w-full py-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     prod.popular
                       ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
@@ -583,7 +489,7 @@ ${completedOrder.licenseKey}
                   }`}
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span>立即线上付款 · 自动获取卡密</span>
+                  <span>在线购买暂未开放</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
