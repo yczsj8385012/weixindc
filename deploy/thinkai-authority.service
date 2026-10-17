@@ -1,0 +1,18 @@
+[Unit]
+Description=ThinkAI persistent licensing authority
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+EnvironmentFile=/etc/thinkai-authority.env
+ExecStart=/usr/bin/node /opt/thinkai-authority/authority.cjs
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/ubuntu/.local/share/thinkai-authority
+
+[Install]
+WantedBy=multi-user.target

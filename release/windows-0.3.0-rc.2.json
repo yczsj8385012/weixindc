@@ -1,0 +1,10 @@
+{
+  "version": "0.3.0-rc.2",
+  "platform": "win32-x64",
+  "url": "https://thinkai.vip/downloads/ThinkAI_Wechat_Assistant_Win_x64_Green.zip",
+  "bytes": 159543249,
+  "sha256": "2a12e0903c3dbc503bce56d503b87072114b4947ba5be7640e38c6f442566256",
+  "public_key_spki_sha256": "6f7aecfce26c7f653a38677d965d0d5b280c84e8991cf28db99285f031db45f2",
+  "macos_released": false,
+  "payments_enabled": false
+}

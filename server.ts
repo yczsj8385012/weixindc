@@ -255,7 +255,7 @@ app.post('/api/license/renew', (req: Request, res: Response) => {
 // 虎皮椒内存安全配置
 let XUNHUPAY_CONFIG = {
   appid: process.env.XUNHUPAY_APPID || '201906188815',
-  appsecret: process.env.XUNHUPAY_APPSECRET || '78a5f93fb791675440dca906e1c785ea',
+  appsecret: process.env.XUNHUPAY_APPSECRET || '',
   notify_url: process.env.XUNHUPAY_NOTIFY_URL || 'https://thinkai.vip/api/payment/xunhupay/notify',
   api_endpoint: 'https://api.xunhupay.com/payment/do.html'
 };

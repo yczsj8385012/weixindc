@@ -6,3 +6,14 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Never publish local runtime state, signing keys or backups
+*.pem
+!release/official-public.pem
+*.zip
+*.bundle
+license.bin
+state.json
+.thinkai-state/
+secrets/
+certs/
