@@ -25,6 +25,7 @@ import { Sparkles, ShieldCheck, Lock, Unlock } from 'lucide-react';
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('store');
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
+  const [showAgentSection, setShowAgentSection] = useState<boolean>(false);
   const [selectedSolutionId, setSelectedSolutionId] = useState<string>('cloudflare-serverless');
   
   // Real-time state shared across Store, Affiliate & Client License Activation
@@ -56,6 +57,17 @@ export default function App() {
     }, 50);
   };
 
+  const handleOpenAgentPortal = () => {
+    setShowAgentSection(true);
+    setActiveTab('affiliate-portal');
+    setTimeout(() => {
+      const el = document.getElementById('affiliate-portal');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
+  };
+
   const handleOrderPaid = (order: any) => {
     setOrders(prev => [order, ...prev]);
     setLatestIssuedKey(order.licenseKey);
@@ -68,6 +80,7 @@ export default function App() {
         setActiveTab={scrollToSection}
         isAdminMode={isAdminMode}
         setIsAdminMode={setIsAdminMode}
+        onOpenAgentPortal={handleOpenAgentPortal}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -87,18 +100,20 @@ export default function App() {
           />
         </section>
 
-        {/* Level-1 Affiliate Revenue Sharing Hub */}
-        <section id="affiliate-portal" className="pt-8">
-          <AffiliatePortal
-            orders={orders}
-            currentAffiliateCode={referrerCode}
-            onSetAffiliateCode={setReferrerCode}
-          />
-        </section>
+        {/* AGENT / DISTRIBUTOR WORKSTATION SECTION */}
+        {(showAgentSection || isAdminMode) && (
+          <section id="affiliate-portal" className="mt-12 pt-8 border-t-2 border-emerald-500/20 animate-in fade-in duration-300">
+            <AffiliatePortal
+              orders={orders}
+              currentAffiliateCode={referrerCode}
+              onSetAffiliateCode={setReferrerCode}
+            />
+          </section>
+        )}
 
         {/* ADMIN PRIVATE PORTAL (Only shown when Admin Mode is toggled) */}
         {isAdminMode && (
-          <div className="mt-16 pt-12 border-t-2 border-dashed border-purple-300 dark:border-purple-800 space-y-12 animate-in fade-in duration-300">
+          <div className="mt-12 pt-8 border-t-2 border-dashed border-purple-300 dark:border-purple-800 space-y-12 animate-in fade-in duration-300">
             <div className="bg-purple-900/10 border border-purple-500/30 rounded-2xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300 font-bold">
                 <Lock className="w-4 h-4 text-purple-500" />
@@ -193,13 +208,18 @@ export default function App() {
           <div className="flex items-center gap-4 text-slate-500">
             <span>官方技术支持：7×24小时在线</span>
             <span>·</span>
-            <span>合规支付保障</span>
+            <button
+              onClick={handleOpenAgentPortal}
+              className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+            >
+              代理商登录入口
+            </button>
             <span>·</span>
             <button
               onClick={() => setIsAdminMode(!isAdminMode)}
               className="text-slate-400 hover:text-indigo-500 underline cursor-pointer"
             >
-              {isAdminMode ? '退出管理模式' : '合伙人与管理入口'}
+              {isAdminMode ? '关闭管理员模式' : '管理员入口'}
             </button>
           </div>
         </div>

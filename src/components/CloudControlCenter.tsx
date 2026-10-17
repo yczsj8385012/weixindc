@@ -28,11 +28,11 @@ export function CloudControlCenter() {
   // Roadmap filter / expansion
   const [expandedSection, setExpandedSection] = useState<string>('all');
 
-  // Xunhupay V3 state
-  const [xunhuAppId, setXunhuAppId] = useState<string>('');
-  const [xunhuAppSecret, setXunhuAppSecret] = useState<string>('');
-  const [xunhuNotifyUrl, setXunhuNotifyUrl] = useState<string>('http://localhost:3000/api/payment/xunhupay/notify');
-  const [xunhuConfigResult, setXunhuConfigResult] = useState<string | null>(null);
+  // Xunhupay V3 state (Pre-filled with live WeChat Payment 4 gateway parameters)
+  const [xunhuAppId, setXunhuAppId] = useState<string>('201906188815');
+  const [xunhuAppSecret, setXunhuAppSecret] = useState<string>('78a5f93fb791675440dca906e1c785ea');
+  const [xunhuNotifyUrl, setXunhuNotifyUrl] = useState<string>('https://thinkai.vip/api/payment/xunhupay/notify');
+  const [xunhuConfigResult, setXunhuConfigResult] = useState<string | null>('🟢 虎皮椒微信支付四真实网关已就绪！可直接调起微信扫码付款');
   const [isSavingXunhu, setIsSavingXunhu] = useState<boolean>(false);
 
   const fetchXunhuConfig = async () => {

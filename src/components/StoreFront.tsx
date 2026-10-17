@@ -107,11 +107,16 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
     return `VIP-2026-${tag}-${p1}-${p2}`;
   };
 
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [isLiveGateway, setIsLiveGateway] = useState<boolean>(false);
+
   const handleStartPay = async (product: Product) => {
     setSelectedProduct(product);
     setIsPaying(true);
     setPaymentStep('scan');
     setCountdown(300);
+    setQrCodeUrl('');
+    setIsLiveGateway(false);
 
     try {
       const res = await fetch('/api/payment/xunhupay/create', {
@@ -127,6 +132,8 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
       const data = await res.json();
       if (data.code === 0 && data.data) {
         setCurrentOrderId(data.data.order_id);
+        if (data.data.qrcode_url) setQrCodeUrl(data.data.qrcode_url);
+        setIsLiveGateway(Boolean(data.data.is_live_gateway));
       } else {
         setCurrentOrderId('ORD-' + Date.now().toString().slice(-8));
       }
@@ -210,10 +217,28 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
   };
 
 
-  // Real client zip bundle generation using JSZip
+  // Real client zip bundle generation or static file download
   const handleDownload = async (osName: string) => {
     setIsDownloading(true);
     try {
+      // 1. Try static file first if placed in /downloads/ directory on server
+      const staticFileName = osName.includes('Windows')
+        ? 'ThinkAI_Wechat_Assistant_Win_x64_Green.zip'
+        : 'ThinkAI_Wechat_Assistant_macOS_Green.zip';
+      const staticUrl = `/downloads/${staticFileName}`;
+
+      const checkRes = await fetch(staticUrl, { method: 'HEAD' }).catch(() => null);
+      if (checkRes && checkRes.ok) {
+        const a = document.createElement('a');
+        a.href = staticUrl;
+        a.download = staticFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
+      // 2. Dynamic generation fallback with JSZip
       const zip = new JSZip();
 
       // 1. Readme
@@ -223,7 +248,7 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
   微信群及好友数据导出助手 · 官方商业正版客户端
 ======================================================
 
-【版本信息】v2.4.0 官方稳定版 (${osName})
+【版本信息】v0.3.0-rc.1 官方稳定版 (${osName})
 【运行环境】Windows 10/11 / macOS 12+ (免安装解压即用)
 【云端授权节点】https://api.thinkai.vip
 【渠道代理标识】${referrerCode || 'DIRECT-OFFICIAL'}
@@ -247,7 +272,7 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
         JSON.stringify(
           {
             app_id: 'thinkai-wechat-export',
-            version: '2.4.0',
+            version: '0.3.0-rc.1',
             channel_agent: referrerCode || 'DIRECT-OFFICIAL',
             authority_server: 'https://api.thinkai.vip',
             backup_server: 'http://43.128.7.140:8787',
@@ -267,7 +292,7 @@ export function StoreFront({ referrerCode, onOrderPaid, orders }: Props) {
 chcp 65001 >nul
 title 微信群及好友数据导出助手 - 官方正版启动器
 echo ======================================================
-echo   正在启动微信群及好友数据导出助手 (v2.4 绿色免安装版)...
+echo   正在启动微信群及好友数据导出助手 (v0.3.0-rc.1 绿色免安装版)...
 echo   官方云端授权节点: https://api.thinkai.vip
 echo   当前绑定的分销合伙人渠道: ${referrerCode || '官方正品'}
 echo ======================================================
@@ -659,9 +684,20 @@ ${completedOrder.licenseKey}
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-                    官方在线正版收银台
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                      官方在线正版收银台
+                    </h3>
+                    {isLiveGateway ? (
+                      <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        🟢 虎皮椒真实网关
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800" title="在云端控制中心填入 AppSecret 后自动无缝切为真实网关">
+                        🟡 沙盒测试模式
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[11px] text-slate-400 font-mono">
                     商户单号: {currentOrderId}
                   </span>
@@ -756,35 +792,28 @@ ${completedOrder.licenseKey}
                 </span>
               </div>
 
-              {/* Styled Mock QR Canvas */}
+              {/* Real QR Code Display Image */}
               <div className="relative inline-block p-3 bg-white rounded-xl shadow-md border border-slate-200">
-                <div className={`w-40 h-40 rounded-lg flex flex-col items-center justify-center p-2 relative overflow-hidden ${
-                  payMethod === 'wechat' ? 'bg-emerald-50' : 'bg-blue-50'
-                }`}>
-                  {/* Grid QR Simulation pattern */}
-                  <div className="grid grid-cols-6 gap-1 w-full h-full opacity-80">
-                    {Array.from({ length: 36 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-xs ${
-                          (i % 2 === 0 || i % 7 === 0 || i === 0 || i === 5 || i === 30 || i === 35)
-                            ? (payMethod === 'wechat' ? 'bg-emerald-700' : 'bg-blue-700')
-                            : 'bg-transparent'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
+                <div className="w-44 h-44 rounded-lg flex items-center justify-center relative overflow-hidden bg-white">
+                  <img 
+                    src={
+                      qrCodeUrl
+                        ? (qrCodeUrl.startsWith('http') ? qrCodeUrl : `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrCodeUrl)}`)
+                        : `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(`https://api.xunhupay.com/payment/do.html?appid=201906188815&order_id=${currentOrderId}`)}`
+                    } 
+                    alt="支付二维码" 
+                    className="w-full h-full object-contain rounded-md"
+                  />
                   {/* Center Brand Badge */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-white px-2 py-1 rounded-md shadow-md border text-[10px] font-bold text-slate-800">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border text-[10px] font-bold text-slate-800">
                       {payMethod === 'wechat' ? '微信支付' : '支付宝'}
                     </div>
                   </div>
                 </div>
 
                 {paymentStep === 'verifying' && (
-                  <div className="absolute inset-0 bg-white/90 rounded-xl flex flex-col items-center justify-center gap-2">
+                  <div className="absolute inset-0 bg-white/95 rounded-xl flex flex-col items-center justify-center gap-2">
                     <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
                     <span className="text-xs font-bold text-slate-800">正在核验支付并出卡...</span>
                   </div>
@@ -803,7 +832,7 @@ ${completedOrder.licenseKey}
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
-              <span>我已扫码支付完成 (模拟虎皮椒回调出卡)</span>
+              <span>我已扫码支付完成 · 查验自动出卡结果</span>
             </button>
 
           </div>

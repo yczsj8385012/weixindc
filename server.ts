@@ -254,9 +254,9 @@ app.post('/api/license/renew', (req: Request, res: Response) => {
 
 // 虎皮椒内存安全配置
 let XUNHUPAY_CONFIG = {
-  appid: process.env.XUNHUPAY_APPID || '',
-  appsecret: process.env.XUNHUPAY_APPSECRET || '',
-  notify_url: process.env.XUNHUPAY_NOTIFY_URL || 'http://localhost:3000/api/payment/xunhupay/notify',
+  appid: process.env.XUNHUPAY_APPID || '201906188815',
+  appsecret: process.env.XUNHUPAY_APPSECRET || '78a5f93fb791675440dca906e1c785ea',
+  notify_url: process.env.XUNHUPAY_NOTIFY_URL || 'https://thinkai.vip/api/payment/xunhupay/notify',
   api_endpoint: 'https://api.xunhupay.com/payment/do.html'
 };
 
@@ -536,8 +536,41 @@ app.post('/api/payment/xunhupay/test-mock-callback', (req: Request, res: Respons
   });
 });
 
+// 5. 获取与更新虎皮椒配置接口
+app.get('/api/payment/xunhupay/config', (_req: Request, res: Response) => {
+  return res.json({
+    code: 0,
+    data: {
+      appid: XUNHUPAY_CONFIG.appid,
+      appsecret: XUNHUPAY_CONFIG.appsecret ? '********' : '',
+      is_configured: !!XUNHUPAY_CONFIG.appsecret,
+      notify_url: XUNHUPAY_CONFIG.notify_url
+    }
+  });
+});
+
+app.post('/api/payment/xunhupay/config', (req: Request, res: Response) => {
+  const { appid, appsecret, notify_url } = req.body || {};
+  if (appid) XUNHUPAY_CONFIG.appid = appid;
+  if (appsecret) XUNHUPAY_CONFIG.appsecret = appsecret;
+  if (notify_url) XUNHUPAY_CONFIG.notify_url = notify_url;
+
+  return res.json({
+    code: 0,
+    message: '虎皮椒配置保存成功！',
+    data: {
+      appid: XUNHUPAY_CONFIG.appid,
+      is_configured: !!XUNHUPAY_CONFIG.appsecret,
+      notify_url: XUNHUPAY_CONFIG.notify_url
+    }
+  });
+});
+
 
 async function startServer() {
+  // 静态资源托管：优先托管 public 目录下的文件 (例如 /downloads 中的 152MB 大文件包)
+  app.use(express.static(path.resolve('public')));
+
   const isProd = process.env.NODE_ENV === 'production';
   if (isProd) {
     // 生产模式：直接托管静态 dist 资源
