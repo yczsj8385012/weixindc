@@ -1,0 +1,6 @@
+{
+  "name": "软件卡密分销与支付全方案决策分析系统",
+  "description": "针对软件售卖、卡密自动交付、二级/多级分销返佣、微信支付宝等聚合收款及Cloudflare/自建授权校验的一站式方案对比与架构指南",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
